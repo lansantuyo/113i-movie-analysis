@@ -1191,37 +1191,6 @@ def run_analysis(df_processed, genre, metric):
     # Final insights and recommendations
     st.markdown("---")
 
-    with st.container():
-        colored_header(
-            label="Analysis Summary",
-            description=f"Key insights for {genre_name} genre optimization",
-            color_name="blue-100"
-        )
-
-        st.markdown("""
-        ### Key Takeaways
-
-        This analysis provides historical correlations between various factors and performance metrics. 
-        For optimal results, consider these insights alongside your specific project, market knowledge, 
-        and current industry trends.
-
-        **Remember:** Correlation does not imply causation. The historical patterns identified here 
-        should be considered as directional guidance rather than absolute rules.
-        """)
-
-        # Add download option for full report
-        timestamp = datetime.now().strftime("%Y%m%d")
-        st.download_button(
-            label="📄 Download Full Analysis Report",
-            data=f"# {genre_name} Genre Performance Analysis\n\nGenerated on: {datetime.now().strftime('%Y-%m-%d')}\n\nThis report contains detailed analysis of {len(df_genre)} movies in the {genre_name} genre, measuring performance by {metric_name}.\n\n[Full report content would be generated here for a real download]",
-            file_name=f"{genre_name.lower().replace(' ', '_')}_analysis_{timestamp}.md",
-            mime="text/markdown"
-        )
-
-        st.caption(
-            f"Analysis completed on {len(df_genre)} movies in the {genre_name} genre. Min sample sizes: Genre ({MIN_SAMPLE_SIZE}), Entity ({MIN_SAMPLE_SIZE_ENTITY}).")
-        st.caption("© Movie Genre Performance Analyzer - For informational purposes only.")
-
 
 # --- Sidebar ---
 with st.sidebar:
@@ -1239,7 +1208,7 @@ with st.sidebar:
 
         # Create more user-friendly metric names
         metric_options = {
-            'revenue_log': 'Revenue (Box Office)',
+            'revenue_log': 'Revenue',
             'roi_log': 'Return on Investment',
             'popularity_log': 'Popularity',
             'vote_count_log': 'Vote Count',
@@ -1297,50 +1266,20 @@ with st.sidebar:
             - **Genres**: {len(available_genres)}
             """)
 
-        # Add a button to run analysis
-        st.markdown("---")
-        analyze_button = st.button("📊 Run Analysis", type="primary", use_container_width=True)
-
-        st.markdown("---")
-        st.caption("Data last updated: April 2025")
-
     else:
         st.error("Failed to load dataset. Please check file paths.")
 
 # --- Main App Content ---
 if 'df_processed' in locals() and df_processed is not None:
     # App Header
-    st.markdown('<h1 class="main-header">🎬 Movie Genre Performance Analyzer</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Unlock data-driven insights for optimizing movie production decisions</p>',
-                unsafe_allow_html=True)
+    # st.markdown('<h1 class="main-header">🎬 Movie Genre Performance Analyzer</h1>', unsafe_allow_html=True)
+    # st.markdown('<p class="sub-header">Unlock data-driven insights for optimizing movie production decisions</p>',
+    #             unsafe_allow_html=True)
 
     # Run analysis button from sidebar or when variables are set
-    if ('analyze_button' in locals() and analyze_button) or (
+    if ('analyze_button' in locals()) or (
             'selected_genre' in locals() and 'selected_metric' in locals()):
         if selected_genre and selected_metric:
             run_analysis(df_processed, selected_genre, selected_metric)
         else:
             st.info("Please select both a genre and a metric in the sidebar to begin analysis.")
-    else:
-        # Welcome message with instructions
-        st.markdown("""
-        ## Welcome to the Movie Genre Performance Analyzer
-
-        This tool helps you discover patterns and insights about movie performance across different genres.
-        Whether you're planning a new film project, studying market trends, or just curious about 
-        what makes certain movies successful, this analyzer provides data-driven insights to inform your decisions.
-
-        ### How to use this tool:
-
-        1. **Select a genre** from the sidebar (e.g., Action, Comedy, Drama)
-        2. **Choose a success metric** to analyze (Revenue, ROI, Popularity, etc.)
-        3. **Click "Run Analysis"** to generate comprehensive insights
-        4. **Explore the tabs** to discover patterns in timing, budget, co-genres, and more
-
-        Get started by making your selections in the sidebar! →
-        """)
-
-        # Add a visual element to the welcome page
-        cols = st.columns([1, 3, 1])
-        with cols[1]:
-            st.image("https://img.icons8.com/fluency/240/000000/documentary.png", width=200)

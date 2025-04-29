@@ -16,8 +16,8 @@ POST_PRODUCTION_FILE = "output/post_prod_predictions.parquet"
 MIN_SAMPLE_SIZE = 5  # Minimum movies needed for aggregation
 
 # --- Page Config ---
-st.set_page_config(layout="wide", page_title="Movie Success Prediction Explorer",
-                   page_icon="🎬", initial_sidebar_state="expanded")
+st.set_page_config(layout="wide", page_title="Model Prediction Results",
+                   page_icon="🎬", initial_sidebar_state="collapsed")
 
 # --- Custom CSS ---
 st.markdown("""
@@ -434,17 +434,6 @@ def display_top_movies(df, metric, n=10, stage="In Production", allow_filtering=
                                                                     color='lightgreen'),
                  use_container_width=True)
 
-    # Add a download button
-    excel_data = io.BytesIO()
-    df_display.to_excel(excel_data, index=False, engine='openpyxl')
-    excel_data.seek(0)
-
-    st.download_button(
-        label=f"Download {stage} Top Movies as Excel",
-        data=excel_data,
-        file_name=f"{stage.lower().replace(' ', '_')}_top_movies_{metric}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
 
     return df_sorted
 
@@ -907,17 +896,27 @@ def create_budget_analysis(df, metric):
         st.subheader("Performance by Budget Quantile")
         st.dataframe(budget_df, use_container_width=True)
 
+        # Reset index to make budget_quantile a regular column
+        budget_analysis_reset = budget_analysis.reset_index()
+
+        # Prepare data for the chart in the right format
+        chart_data = pd.DataFrame({
+            'Budget Quantile': [f"Q{int(q) + 1}" for q in budget_analysis_reset['budget_quantile']],
+            'Average Value': budget_analysis_reset[f'predicted_{metric}']['mean'],
+            'Count': budget_analysis_reset['budget']['count']
+        })
+
         # Create a bar chart of average metric by budget quantile
         fig = px.bar(
-            budget_analysis,
-            x='budget_quantile',
-            y=(f'predicted_{metric}', 'mean'),
+            chart_data,
+            x='Budget Quantile',
+            y='Average Value',
             labels={
-                'budget_quantile': 'Budget Quantile',
-                'mean': f'Avg. Predicted {metric.capitalize()}'
+                'Budget Quantile': 'Budget Quantile',
+                'Average Value': f'Avg. Predicted {metric.capitalize()}'
             },
-            color='budget_quantile',
-            text='budget_count'
+            color='Budget Quantile',
+            text='Count'
         )
 
         # Update layout
@@ -1137,10 +1136,10 @@ def compare_production_stages(in_prod_df, post_prod_df, metric):
 
 
 # --- Main App ---
-st.title("🎬 Movie Success Prediction Explorer")
+st.title("Model Prediction Results")
 
 st.markdown("""
-This app helps you explore movies predicted to be the most successful based on various metrics.
+This dashboard explores movies predicted to be the most successful based on various metrics.
 Select a success metric and explore top movies in production and post-production stages.
 """)
 
@@ -1284,80 +1283,3 @@ if in_prod_df is not None and post_prod_df is not None:
         - Compare in-production vs. post-production trends
         """.format(IN_PRODUCTION_FILE, POST_PRODUCTION_FILE)
     )
-
-    # # Add export functionality in sidebar
-    # st.sidebar.markdown("---")
-    # st.sidebar.subheader("Export Data")
-    #
-    # export_format = st.sidebar.radio("Choose export format:", ["Excel", "CSV"])
-    #
-    # if st.sidebar.button("Export All Prediction Data"):
-    #     # Create a combined dataframe with a Stage column
-    #     in_prod_export = in_prod_df.copy()
-    #     post_prod_export = post_prod_df.copy()
-    #
-    #     in_prod_export['Stage'] = 'In Production'
-    #     post_prod_export['Stage'] = 'Post Production'
-    #
-    #     all_data = pd.concat([in_prod_export, post_prod_export])
-    #
-    #     # Create the file
-    #     if export_format == "Excel":
-    #         output = io.BytesIO()
-    #         with pd.ExcelWriter(output, engine='openpyxl') as writer:
-    #             in_prod_export.to_excel(writer, sheet_name='In Production', index=False)
-    #             post_prod_export.to_excel(writer, sheet_name='Post Production', index=False)
-    #             all_data.to_excel(writer, sheet_name='All Movies', index=False)
-    #         output.seek(0)
-    #
-    #         st.sidebar.download_button(
-    #             label="Download Excel file",
-    #             data=output,
-    #             file_name=f"movie_predictions_{datetime.now().strftime('%Y%m%d')}.xlsx",
-    #             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    #         )
-    #     else:  # CSV
-    #         output = io.StringIO()
-    #         all_data.to_csv(output, index=False)
-    #         output.seek(0)
-    #
-    #         st.sidebar.download_button(
-    #             label="Download CSV file",
-    #             data=output.getvalue(),
-    #             file_name=f"movie_predictions_{datetime.now().strftime('%Y%m%d')}.csv",
-    #             mime="text/csv"
-    #         )
-
-    # --- Footer ---
-    st.markdown("---")
-    st.caption(
-        "Note: This analysis is based on machine learning predictions and should be used as one of many factors in decision making.")
-    st.caption(
-        "Predictions are estimates and actual performance may vary based on many factors not captured in the model.")
-
-else:
-    st.error("Failed to load data. Please check the file paths and data formats.")
-    st.info("To use this app, you need to save your dataframes with predictions as Parquet files.")
-
-    # Instructions
-    with st.expander("How to prepare your data"):
-        st.markdown("""
-        1. After running your prediction code, save the dataframes with predictions:
-        ```python
-        # Create the output directory if it doesn't exist
-        import os
-        os.makedirs('output', exist_ok=True)
-
-        # Save the dataframes with predictions
-        in_prod_df.to_parquet('output/in_prod_predictions.parquet')
-        post_prod_df.to_parquet('output/post_prod_predictions.parquet')
-        ```
-
-        2. Make sure the dataframes contain:
-           - Movie titles in a 'title' column
-           - Prediction columns starting with 'predicted_'
-           - Release information (year, month, season)
-           - Genre columns starting with 'genre_'
-           - Production company columns starting with 'production_companies_'
-           - Budget information in a 'budget' column (optional)
-        """)

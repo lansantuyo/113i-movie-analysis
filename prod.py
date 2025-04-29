@@ -39,7 +39,7 @@ except ImportError:
         return st.container()
 
 # --- Configuration ---
-DATA_FILE = "output/complete_predictions.parquet"
+DATA_FILE = "output/test_predictions.parquet"
 MIN_SAMPLE_SIZE = 5  # Minimum movies needed for aggregation
 
 # --- Custom CSS ---
